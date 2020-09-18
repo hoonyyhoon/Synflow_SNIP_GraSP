@@ -1,25 +1,38 @@
 from abc import ABC, abstractmethod
+from typing import Any, Iterable, List, Tuple
+
 import torch
 import torch.nn as nn
-from typing import Any, Tuple, List, Iterable
 import torch.nn.utils.prune as prune
+
 
 class Pruner(ABC):
     """Pruner abstract class."""
-    def __init__(self, net: nn.Module, device: torch.device, input_shape: List[int]) -> None:
+
+    def __init__(
+        self, net: nn.Module, device: torch.device, input_shape: List[int]
+    ) -> None:
         """Initialize."""
         super(Pruner, self).__init__()
         self.model = net
         self.device = device
         self.input_shape = input_shape
+        self.params_to_prune: Tuple[Tuple[nn.Module, str]] = None  # type: ignore
 
     @abstractmethod
     def prune(self, amount):
         """Prune."""
         pass
 
-    def global_unstructured(self, pruning_method, **kwargs):
-        """ Based on
+    @abstractmethod
+    def get_prune_score(self):
+        """Get prune score."""
+        pass
+
+    def global_unstructured(
+        self, pruning_method: torch.nn.utils.prune.BasePruningMethod, **kwargs
+    ):
+        """Based on
         https://pytorch.org/docs/stable/_modules/torch/nn/utils/prune.html#global_unstructured.
         Modify scores depending on the algorithm.
         """
@@ -33,16 +46,16 @@ class Pruner(ABC):
         default_mask = torch.nn.utils.parameters_to_vector(
             [
                 getattr(module, name + "_mask", torch.ones_like(getattr(module, name)))
-                for (module, name) in self.params_to_prune
+                for (module, name) in self.params_to_prune  # type: ignore
             ]
         )
 
         # use the canonical pruning methods to compute the new mask, even if the
         # parameter is now a flattened out version of `parameters`
         container = prune.PruningContainer()
-        container._tensor_name = "temp"  # to make it match that of `method`
+        container._tensor_name = "temp"  # type: ignore
         method = pruning_method(**kwargs)
-        method._tensor_name = "temp"  # to make it match that of `container`
+        method._tensor_name = "temp"  # type: ignore
         if method.PRUNING_TYPE != "unstructured":
             raise TypeError(
                 'Only "unstructured" PRUNING_TYPE supported for '
@@ -59,7 +72,7 @@ class Pruner(ABC):
 
         # Pointer for slicing the mask to match the shape of each parameter
         pointer = 0
-        for module, name in self.params_to_prune:
+        for module, name in self.params_to_prune:  # type: ignore
             param = getattr(module, name)
             # The length of the parameter
             num_param = param.numel()
@@ -72,7 +85,9 @@ class Pruner(ABC):
             # Increment the pointer to continue slicing the final_mask
             pointer += num_param
 
-    def get_params(self, extract_conditions: Tuple[Tuple[Any, str], ...]) -> Tuple[Tuple[nn.Module, str], ...]:
+    def get_params(
+        self, extract_conditions: Tuple[Tuple[Any, str], ...]
+    ) -> Tuple[Tuple[nn.Module, str], ...]:
         """Get parameters(weight and bias) tuples for pruning."""
         t = []
         for module in self.model.modules():
