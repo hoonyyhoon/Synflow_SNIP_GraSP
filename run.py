@@ -78,7 +78,7 @@ if __name__ == "__main__":
             pruner.prune(amount=prune_amount)
 
             # Train
-            trainer = Trainer(net, trainloader, testloader, device)
+            trainer = Trainer(net, trainloader, testloader, device, args.epoch)
             test_acc = trainer.train(args.epoch)
 
             # Remove
