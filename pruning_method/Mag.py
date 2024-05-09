@@ -23,6 +23,10 @@ class Mag(Pruner):
             )
         )
 
+    def get_prune_score(self):
+        """Get prune score."""
+        pass
+
     def prune(self, amount: int):
         """Prune with magnitude(L1)."""
         print(f"Start prune, target_sparsity: {amount*100:.2f}%")

@@ -23,6 +23,10 @@ class Rand(Pruner):
             )
         )
 
+    def get_prune_score(self):
+        """Get prune score."""
+        pass
+
     def prune(self, amount: int):
         """Prune randomly."""
         print(f"Start prune, target_sparsity: {amount*100:.2f}%")

@@ -16,13 +16,19 @@ class Pruner(ABC):
         super(Pruner, self).__init__()
         self.model = net
         self.device = device
-        self.input_shape = input_shape
+        # need to be NCHW
+        self.input_shape = [input_shape[2], input_shape[0], input_shape[1]]
         self.params_to_prune: Tuple[Tuple[nn.Module, str]] = None  # type: ignore
 
     @abstractmethod
     def prune(self, amount):
         """Prune."""
         pass
+
+    def remove(self):
+        for module, name in self.params_to_prune:  # type: ignore
+            if name == "weight":
+                prune.remove(module, name)
 
     @abstractmethod
     def get_prune_score(self):
@@ -68,7 +74,9 @@ class Pruner(ABC):
 
         # use the `compute_mask` method from `PruningContainer` to combine the
         # mask computed by the new method with the pre-existing mask
-        final_mask = container.compute_mask(t, default_mask)
+        final_mask = container.compute_mask(
+            t.to(self.device), default_mask.to(self.device)
+        )
 
         # Pointer for slicing the mask to match the shape of each parameter
         pointer = 0
