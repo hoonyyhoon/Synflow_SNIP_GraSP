@@ -9,10 +9,10 @@ from pruning_method.pruner import Pruner
 
 class Rand(Pruner):
     def __init__(
-        self, net: nn.Module, device: torch.device, input_shape: List[int]
+        self, net: nn.Module, device: torch.device, input_shape: List[int], dataloader: torch.utils.data.DataLoader, criterion
     ) -> None:
         """Initialize."""
-        super(Rand, self).__init__(net, device, input_shape)
+        super(Rand, self).__init__(net, device, input_shape, dataloader, criterion)
 
         self.params_to_prune = self.get_params(
             (

@@ -33,17 +33,9 @@ class Trainer:
         # Train
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(
-            self.model.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-5
+            self.model.parameters(), lr=0.1, momentum=0.9, weight_decay=5*1e-4
         )
-        self.scheduler = CosineAnnealingWarmupRestarts(
-            self.optimizer,
-            first_cycle_steps=epoch//4,
-            cycle_mult=1.0,
-            max_lr=0.1,
-            min_lr=0.0001,
-            warmup_steps=max(10, epoch//(4*4)),
-            gamma=0.5,
-        )
+        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[epoch*3//8, epoch*6//8], gamma=0.2)
 
     def train(self, epochs: int) -> float:
         """Train model, return best acc."""
