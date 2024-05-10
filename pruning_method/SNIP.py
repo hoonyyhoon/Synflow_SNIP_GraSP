@@ -7,11 +7,11 @@ import torch.nn.utils.prune as prune
 from pruning_method.pruner import Pruner
 
 
-class Synflow(Pruner):
+class SNIP(Pruner):
     def __init__(
         self, net: nn.Module, device: torch.device, input_shape: List[int], dataloader: torch.utils.data.DataLoader, criterion
     ) -> None:
-        super(Synflow, self).__init__(net, device, input_shape, dataloader, criterion)
+        super(SNIP, self).__init__(net, device, input_shape, dataloader, criterion)
 
         self.params_to_prune = self.get_params(
             (
@@ -19,6 +19,14 @@ class Synflow(Pruner):
                 (nn.Conv2d, "bias"),
                 (nn.Linear, "weight"),
                 (nn.Linear, "bias"),
+            )
+        )
+        self.params_to_prune_orig = self.get_params(
+            (
+                (nn.Conv2d, "weight_orig"),
+                (nn.Conv2d, "bias_orig"),
+                (nn.Linear, "weight_orig"),
+                (nn.Linear, "bias_orig"),
             )
         )
         prune.global_unstructured(
@@ -49,33 +57,15 @@ class Synflow(Pruner):
 
     def get_prune_score(self) -> List[float]:
         """Run prune algorithm and get score."""
-        # Synaptic flow
-        signs = self.linearize()
-        input_ones = torch.ones([1] + self.input_shape).to(self.device)
-        self.model.eval()
-        output = self.model(input_ones)
-        torch.sum(output).backward()
 
-        # get score function R
+        for data, target in self.dataloader:
+            data, target = data.to(self.device), target.to(self.device)
+            output = self.model(data)
+            self.criterion(output, target).backward()
+
         scores = []
-        for (p, n), (po, no) in zip(self.params_to_prune, self.params_to_prune_orig):
-            score = (getattr(p, n) * getattr(po, no).grad).to("cpu").detach().abs_()
+        for (po, no) in self.params_to_prune_orig:
+            score = getattr(po, no).grad.to("cpu").detach().abs_()
             scores.append(score)
             getattr(po, no).grad.data.zero_()
-
-        self.nonlinearize(signs)
-        self.model.train()
         return scores
-
-    @torch.no_grad()
-    def linearize(self):
-        signs = {}
-        for name, param in self.model.state_dict().items():
-            signs[name] = torch.sign(param)
-            param.abs_()
-        return signs
-
-    @torch.no_grad()
-    def nonlinearize(self, signs: Dict[str, torch.Tensor]):
-        for name, param in self.model.state_dict().items():
-            param.mul_(signs[name])

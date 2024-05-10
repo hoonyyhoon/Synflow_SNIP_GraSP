@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ratio_list",
         nargs="+",
-        default=[0.9, 0.95],
+        default=[0.9, 0.95, 0.98],
         type=float,  # type: ignore
         help="List of pruning ratio. ex) --ratio_list 0 0.5 0.9 0.95 0.99",  # type: ignore
     )
@@ -68,17 +68,18 @@ if __name__ == "__main__":
                 __import__("torchvision.models", fromlist=[""]), args.model
             )().to(device)
 
+            # Train
+            trainer = Trainer(net, trainloader, testloader, device, args.epoch)
+
             # Apply prune
             input_shape = list(trainloader.dataset.data.shape[1:])
             if len(input_shape) == 2:
                 input_shape = input_shape + [3]
             pruner = getattr(
                 __import__("pruning_method." + method, fromlist=[""]), method
-            )(net, device, input_shape)
+            )(net, device, input_shape, trainloader, trainer.criterion)
             pruner.prune(amount=prune_amount)
 
-            # Train
-            trainer = Trainer(net, trainloader, testloader, device, args.epoch)
             test_acc = trainer.train(args.epoch)
 
             # Remove

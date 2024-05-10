@@ -10,7 +10,7 @@ class Pruner(ABC):
     """Pruner abstract class."""
 
     def __init__(
-        self, net: nn.Module, device: torch.device, input_shape: List[int]
+        self, net: nn.Module, device: torch.device, input_shape: List[int], dataloader: torch.utils.data.DataLoader, criterion
     ) -> None:
         """Initialize."""
         super(Pruner, self).__init__()
@@ -19,6 +19,8 @@ class Pruner(ABC):
         # need to be NCHW
         self.input_shape = [input_shape[2], input_shape[0], input_shape[1]]
         self.params_to_prune: Tuple[Tuple[nn.Module, str]] = None  # type: ignore
+        self.dataloader = dataloader
+        self.criterion = criterion
 
     @abstractmethod
     def prune(self, amount):
