@@ -9,7 +9,12 @@ from pruning_method.pruner import Pruner
 
 class Mag(Pruner):
     def __init__(
-        self, net: nn.Module, device: torch.device, input_shape: List[int], dataloader: torch.utils.data.DataLoader, criterion
+        self,
+        net: nn.Module,
+        device: torch.device,
+        input_shape: List[int],
+        dataloader: torch.utils.data.DataLoader,
+        criterion,
     ) -> None:
         """Initialize."""
         super(Mag, self).__init__(net, device, input_shape, dataloader, criterion)

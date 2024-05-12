@@ -1,5 +1,5 @@
 # Comparison of Synflow/SNIP/GraSP 
-Implementation of Synaptic flow, Single-shot Network Pruning, Gradient Signal Preservation in pytorch v1.6.  
+Implementation of Synaptic flow, Single-shot Network Pruning, Gradient Signal Preservation in pytorch v2.3.  
 Aims to compare pruning method.
 
 1. Synaptic Flow: Pruning Neural Networks Without Any Data By Iteratively Conserving Synaptic Flow  
@@ -18,7 +18,7 @@ Official repo: https://github.com/alecwangcq/GraSP
 Follwing pruning method(Pruning at initialization prior to training or while training) will be implemented.
  - [x] Synaptic flow
  - [ ] GraSP
- - [ ] SNIP
+ - [x] SNIP
  - [x] Random
  - [x] Magnitude
  - [ ] Plot
@@ -41,7 +41,7 @@ optional arguments:
   --dataset DATASET     Dataset in torchvision.datasets ex) CIFAR10, CIFAR100,
                         MNIST
   --batch_size BATCH_SIZE
-                        Batch size, default: 64
+                        Batch size, default: 128
   --method_list METHOD_LIST [METHOD_LIST ...]
                         Pruning method(Rand/Mag/Synflow) list run
                         sequentially. ex) --method_list Synflow Rand Mag
@@ -52,6 +52,6 @@ optional arguments:
 
 Example
 ```bash
-python run.py --model resnet18 --dataset MNIST --method_list Rand Mag Synflow --ratio_list 0 0.5 0.9 0.99  
+python run.py --model resnet18 --dataset MNIST --method_list Rand Mag Synflow SNIP --ratio_list 0.5 0.9 0.99  
 ```
 

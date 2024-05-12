@@ -10,7 +10,12 @@ class Pruner(ABC):
     """Pruner abstract class."""
 
     def __init__(
-        self, net: nn.Module, device: torch.device, input_shape: List[int], dataloader: torch.utils.data.DataLoader, criterion
+        self,
+        net: nn.Module,
+        device: torch.device,
+        input_shape: List[int],
+        dataloader: torch.utils.data.DataLoader,
+        criterion,
     ) -> None:
         """Initialize."""
         super(Pruner, self).__init__()

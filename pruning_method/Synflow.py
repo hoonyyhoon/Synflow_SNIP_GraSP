@@ -9,7 +9,12 @@ from pruning_method.pruner import Pruner
 
 class Synflow(Pruner):
     def __init__(
-        self, net: nn.Module, device: torch.device, input_shape: List[int], dataloader: torch.utils.data.DataLoader, criterion
+        self,
+        net: nn.Module,
+        device: torch.device,
+        input_shape: List[int],
+        dataloader: torch.utils.data.DataLoader,
+        criterion,
     ) -> None:
         super(Synflow, self).__init__(net, device, input_shape, dataloader, criterion)
 

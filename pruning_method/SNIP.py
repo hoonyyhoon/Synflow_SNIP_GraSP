@@ -10,7 +10,12 @@ from pruning_method.pruner import Pruner
 
 class SNIP(Pruner):
     def __init__(
-        self, net: nn.Module, device: torch.device, input_shape: List[int], dataloader: torch.utils.data.DataLoader, criterion
+        self,
+        net: nn.Module,
+        device: torch.device,
+        input_shape: List[int],
+        dataloader: torch.utils.data.DataLoader,
+        criterion,
     ) -> None:
         super(SNIP, self).__init__(net, device, input_shape, dataloader, criterion)
 
@@ -48,9 +53,7 @@ class SNIP(Pruner):
 
     def prune(self, amount: int):
         print(f"Start prune, target_sparsity: {amount*100:.2f}%")
-        self.global_unstructured(
-            pruning_method=prune.L1Unstructured, amount=amount
-        )
+        self.global_unstructured(pruning_method=prune.L1Unstructured, amount=amount)
         sparsity = self.mask_sparsity()
         print(f"Pruning Done, sparsity: {sparsity:.2f}%")
 
@@ -65,7 +68,7 @@ class SNIP(Pruner):
 
         scores = []
         for (p, n), (po, no) in zip(self.params_to_prune, self.params_to_prune_orig):
-            score = (getattr(p, n)* getattr(po, no).grad).to("cpu").detach().abs_()
+            score = (getattr(p, n) * getattr(po, no).grad).to("cpu").detach().abs_()
             scores.append(score)
         self.model.zero_grad()
         return scores
