@@ -2,12 +2,12 @@
 Implementation of Synaptic flow, Single-shot Network Pruning, Gradient Signal Preservation in pytorch v2.3.  
 Aims to compare pruning method.
 
-1. Synaptic Flow: Pruning Neural Networks Without Any Data By Iteratively Conserving Synaptic Flow  
+1. Synaptic Flow: Pruning Neural Networks Without Any Data By Iteratively Conserving Synaptic Flow(NeurIPS 2020)
 Paper: https://arxiv.org/pdf/2006.05467.pdf  
 Official repo: https://github.com/ganguli-lab/Synaptic-Flow  
 
 2. SNIP: Single-shot Network Pruning based on Connection Sensitivity(ICLR2019)  
-Paper: https://github.com/namhoonlee/snip-public  
+Paper: https://arxiv.org/pdf/1810.02340.pdf
 Official repo: https://github.com/namhoonlee/snip-public
 
 3. GraSP: Picking Winning Tickets Before Training By Preserving Gradient Flow(ICLR2020)  
