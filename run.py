@@ -24,7 +24,7 @@ if __name__ == "__main__":
         help="Dataset in torchvision.datasets ex) CIFAR10, CIFAR100, MNIST",
     )
     parser.add_argument(
-        "--batch_size", default=64, type=int, help="Batch size, default: 64"
+        "--batch_size", default=128, type=int, help="Batch size, default: 128"
     )
     parser.add_argument(
         "--method_list",
@@ -37,15 +37,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ratio_list",
         nargs="+",
-        default=[0.9, 0.95],
+        default=[0.9, 0.95, 0.98],
         type=float,  # type: ignore
         help="List of pruning ratio. ex) --ratio_list 0 0.5 0.9 0.95 0.99",  # type: ignore
     )
     parser.add_argument(
         "--epoch",
-        default=50,
+        default=160,
         type=int,
-        help="Number of epochs to train, default: 50",
+        help="Number of epochs to train, default: 160",
     )
 
     args = parser.parse_args()
@@ -67,6 +67,10 @@ if __name__ == "__main__":
             net = getattr(
                 __import__("torchvision.models", fromlist=[""]), args.model
             )().to(device)
+            print(net.__class__)
+
+            # Train
+            trainer = Trainer(net, trainloader, testloader, device, args.epoch)
 
             # Apply prune
             input_shape = list(trainloader.dataset.data.shape[1:])
@@ -74,11 +78,9 @@ if __name__ == "__main__":
                 input_shape = input_shape + [3]
             pruner = getattr(
                 __import__("pruning_method." + method, fromlist=[""]), method
-            )(net, device, input_shape)
+            )(net, device, input_shape, trainloader, trainer.criterion)
             pruner.prune(amount=prune_amount)
 
-            # Train
-            trainer = Trainer(net, trainloader, testloader, device, args.epoch)
             test_acc = trainer.train(args.epoch)
 
             # Remove

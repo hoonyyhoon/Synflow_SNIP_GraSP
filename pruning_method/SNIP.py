@@ -3,11 +3,12 @@ from typing import Dict, List
 import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
+from tqdm import tqdm
 
 from pruning_method.pruner import Pruner
 
 
-class Synflow(Pruner):
+class SNIP(Pruner):
     def __init__(
         self,
         net: nn.Module,
@@ -16,7 +17,7 @@ class Synflow(Pruner):
         dataloader: torch.utils.data.DataLoader,
         criterion,
     ) -> None:
-        super(Synflow, self).__init__(net, device, input_shape, dataloader, criterion)
+        super(SNIP, self).__init__(net, device, input_shape, dataloader, criterion)
 
         self.params_to_prune = self.get_params(
             (
@@ -24,6 +25,14 @@ class Synflow(Pruner):
                 (nn.Conv2d, "bias"),
                 (nn.Linear, "weight"),
                 (nn.Linear, "bias"),
+            )
+        )
+        self.params_to_prune_orig = self.get_params(
+            (
+                (nn.Conv2d, "weight_orig"),
+                (nn.Conv2d, "bias_orig"),
+                (nn.Linear, "weight_orig"),
+                (nn.Linear, "bias_orig"),
             )
         )
         prune.global_unstructured(
@@ -43,44 +52,23 @@ class Synflow(Pruner):
         )
 
     def prune(self, amount: int):
-        unit_amount = 1 - ((1 - amount) ** 0.01)
         print(f"Start prune, target_sparsity: {amount*100:.2f}%")
-        for _ in range(100):
-            self.global_unstructured(
-                pruning_method=prune.L1Unstructured, amount=unit_amount
-            )
+        self.global_unstructured(pruning_method=prune.L1Unstructured, amount=amount)
         sparsity = self.mask_sparsity()
         print(f"Pruning Done, sparsity: {sparsity:.2f}%")
 
     def get_prune_score(self) -> List[float]:
         """Run prune algorithm and get score."""
-        # Synaptic flow
-        signs = self.linearize()
-        input_ones = torch.ones([1] + self.input_shape).to(self.device)
-        self.model.eval()
-        output = self.model(input_ones)
-        torch.sum(output).backward()
+        self.model.train()
+        with tqdm(self.dataloader, unit="batch") as iepoch:
+            for inputs, labels in iepoch:
+                data, target = inputs.to(self.device), labels.to(self.device)
+                output = self.model(data)
+                self.criterion(output, target).backward()
 
-        # get score function R
         scores = []
         for (p, n), (po, no) in zip(self.params_to_prune, self.params_to_prune_orig):
             score = (getattr(p, n) * getattr(po, no).grad).to("cpu").detach().abs_()
             scores.append(score)
-            getattr(po, no).grad.data.zero_()
-
-        self.nonlinearize(signs)
-        self.model.train()
+        self.model.zero_grad()
         return scores
-
-    @torch.no_grad()
-    def linearize(self):
-        signs = {}
-        for name, param in self.model.state_dict().items():
-            signs[name] = torch.sign(param)
-            param.abs_()
-        return signs
-
-    @torch.no_grad()
-    def nonlinearize(self, signs: Dict[str, torch.Tensor]):
-        for name, param in self.model.state_dict().items():
-            param.mul_(signs[name])
